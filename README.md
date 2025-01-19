@@ -9,6 +9,7 @@ The sensing device uses a BME280 sensor to measure temperature, which is process
 
 2.Display Device
 The display device receives temperature data wirelessly via Bluetooth from the sensing device. The ESP32 microcontroller processes this data and controls the gauge needle to indicate the current temperature. If the temperature exceeds the set threshold, the LED lights up as a warning. The user can press the button to acknowledge the alert and reset the LED. The system is powered by a 3.7V Adafruit battery.
+
 ![Image description](images/display_device.png)
 
 3. how they connect
