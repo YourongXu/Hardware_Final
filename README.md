@@ -1,6 +1,6 @@
 # Hardware_Final
 A design that monitors the temperature in the wine storage area, helping maintain the optimal environment for wine preservation.
-nihqo
+nihqo你哈了
 When the temperature rises or falls outside the optimal range, the sensing device detects the change and wirelessly sends data to the display device. The gauge needle shows the current temperature status, and if it exceeds the limits, the LED light turns on as a warning. The user can press the button to acknowledge and turn off the warning light.
 
 1.Seonsing Device
