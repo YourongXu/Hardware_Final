@@ -26,5 +26,5 @@ A button provides input to the ESP32, which controls an LED and a gauge needle f
 
 4.circuit diagram
 
-This diagram shows how each component connect with each other, bas
+This diagram shows how each component connect with each other. ESP 32 played an important role both in sensing device and display device.
 ![Image description](images/circuit_diagram.png)
