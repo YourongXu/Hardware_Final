@@ -25,4 +25,6 @@ A button provides input to the ESP32, which controls an LED and a gauge needle f
 ![Image description](images/flow.png)
 
 4.circuit diagram
+
+This diagram shows how each component connect with each other, bas
 ![Image description](images/circuit_diagram.png)
