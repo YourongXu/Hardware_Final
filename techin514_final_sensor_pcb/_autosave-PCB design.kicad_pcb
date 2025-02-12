@@ -81,9 +81,9 @@
 			(subtractmaskfromsilk no)
 			(outputformat 1)
 			(mirror no)
-			(drillshape 1)
+			(drillshape 0)
 			(scaleselection 1)
-			(outputdirectory "")
+			(outputdirectory "/Users/yourongxu/Desktop/")
 		)
 	)
 	(net 0 "")
@@ -110,7 +110,7 @@
 		(descr "Wuerth, WS-SLTV, 450301014042, https://www.we-online.com/components/products/datasheet/450301014042.pdf")
 		(tags "switch single-pole opposite-side-connection double-throw SPDT würth wurth")
 		(property "Reference" "SW1"
-			(at 0 -2.54 360)
+			(at 0 -2.54 0)
 			(layer "F.SilkS")
 			(uuid "adce6b2d-c74b-40a3-a9e9-cedf295abaa3")
 			(effects
@@ -121,7 +121,7 @@
 			)
 		)
 		(property "Value" "SW_SPDT"
-			(at 0 3.81 360)
+			(at 0 3.81 0)
 			(layer "F.Fab")
 			(uuid "5e3118c5-0b39-4eb1-b358-29a44a999130")
 			(effects
@@ -208,7 +208,7 @@
 			(uuid "9b96159c-1fda-4aab-9164-429cb3134bd6")
 		)
 		(fp_text user "${REFERENCE}"
-			(at 0 2.54 360)
+			(at 0 2.54 0)
 			(layer "F.Fab")
 			(uuid "1ac1d989-1cb5-411d-883d-4fa0ed87e5d6")
 			(effects
@@ -953,7 +953,7 @@
 			(uuid "89324208-eb3a-4c6d-ab4e-342a9e564afd")
 		)
 		(fp_text user "${REFERENCE}"
-			(at 0 3.81 360)
+			(at 0 3.81 0)
 			(layer "F.Fab")
 			(uuid "bd498e8a-5c7f-421e-a6e7-bcab9d5356a5")
 			(effects
