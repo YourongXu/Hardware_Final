@@ -1,0 +1,107 @@
+#include <Arduino.h>
+#include <BLEDevice.h>
+#include <BLEUtils.h>
+#include <BLEScan.h>
+#include <BLEAdvertisedDevice.h>
+#include <SwitecX25.h>
+
+#define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
+#define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
+#define TARGET_DEVICE_NAME  "yourong"
+#define STEPS_PER_REV 315
+
+// X27 Stepper Motor Parameters
+#define PIN1 D0
+#define PIN2 D1
+#define PIN3 D2
+#define PIN4 D3
+
+SwitecX25 motor(STEPS_PER_REV, PIN1, PIN2, PIN3, PIN4);
+BLEAdvertisedDevice* myDevice = nullptr;
+bool firstReading = true;  // Flag to track the first received temperature
+float lastTemperature = 0.0;  // Store the last temperature value
+
+// BLE device scanning handler
+class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
+  void onResult(BLEAdvertisedDevice advertisedDevice) {
+    if (advertisedDevice.haveName() && advertisedDevice.getName() == TARGET_DEVICE_NAME) {
+      Serial.println("Found BLE server: yourong");
+      myDevice = new BLEAdvertisedDevice(advertisedDevice);
+      BLEDevice::getScan()->stop();
+    }
+  }
+};
+
+// BLE server notification handler
+void notifyCallback(BLERemoteCharacteristic* pBLERemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
+  String tempStr = "";
+  for (size_t i = 0; i < length; i++) {
+    tempStr += (char)pData[i];
+  }
+  float temperature = tempStr.toFloat();
+  Serial.print("Received temperature data: ");
+  Serial.println(temperature);
+
+  // Skip the first reading and just store the temperature
+  if (firstReading) {
+    lastTemperature = temperature;
+    firstReading = false;
+    Serial.println("First temperature reading received. Storing it, no movement.");
+    return;
+  }
+
+  // Calculate temperature change
+  float tempChange = temperature - lastTemperature;
+  int angleChange = round(tempChange / 0.01) * 10; // Rotate 10° for every 0.01°C change
+
+  Serial.print("Temperature change: ");
+  Serial.print(tempChange);
+  Serial.print("°C, Stepper motor rotates: ");
+  Serial.print(angleChange);
+  Serial.println("°");
+
+  // Execute incremental rotation
+  motor.setPosition(motor.currentStep + angleChange);
+  lastTemperature = temperature;
+}
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("Initializing stepper motor...");
+  
+  Serial.println("Scanning for BLE devices...");
+  BLEDevice::init("");
+  BLEScan* pBLEScan = BLEDevice::getScan();
+  pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
+  pBLEScan->setActiveScan(true);
+  pBLEScan->start(30);
+
+  if (myDevice != nullptr) {
+    BLEClient* pClient = BLEDevice::createClient();
+    Serial.println("Connecting to BLE server...");
+    pClient->connect(myDevice);
+
+    BLERemoteService* pRemoteService = pClient->getService(SERVICE_UUID);
+    if (pRemoteService == nullptr) {
+      Serial.println("BLE service not found");
+      return;
+    }
+
+    BLERemoteCharacteristic* pRemoteCharacteristic = pRemoteService->getCharacteristic(CHARACTERISTIC_UUID);
+    if (pRemoteCharacteristic == nullptr) {
+      Serial.println("BLE characteristic not found");
+      return;
+    }
+
+    if (pRemoteCharacteristic->canNotify()) {
+      pRemoteCharacteristic->registerForNotify(notifyCallback);
+      Serial.println("Subscribed to BLE notifications");
+    }
+  } else {
+    Serial.println("Target device not found");
+  }
+}
+
+void loop() {
+  motor.update();  // Continuously update stepper motor status
+}
