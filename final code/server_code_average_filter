@@ -1,0 +1,95 @@
+#include <Arduino.h>
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLEUtils.h>
+#include <BLE2902.h>
+
+#define DEVICE_NAME         "yourong"
+#define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
+#define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
+
+#define BME280_ADDRESS 0x76
+#define FILTER_SIZE 10
+
+Adafruit_BME280 bme;
+BLEServer* pServer = NULL;
+BLECharacteristic* pCharacteristic = NULL;
+bool deviceConnected = false;
+
+float tempBuffer[FILTER_SIZE] = {0};
+int bufferIndex = 0;
+bool bufferFilled = false;
+
+class MyServerCallbacks: public BLEServerCallbacks {
+  void onConnect(BLEServer* pServer) {
+    deviceConnected = true;
+    Serial.println("Client connected");
+  }
+  void onDisconnect(BLEServer* pServer) {
+    deviceConnected = false;
+    Serial.println("Client disconnected");
+    pServer->startAdvertising();
+  }
+};
+
+float getAverageTemperature() {
+  float sum = 0;
+  int count = bufferFilled ? FILTER_SIZE : bufferIndex;
+  for (int i = 0; i < count; i++) {
+    sum += tempBuffer[i];
+  }
+  return sum / count;
+}
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("Initializing BME280...");
+  
+  if (!bme.begin(BME280_ADDRESS)) {
+    Serial.println("Could not find BME280 sensor!");
+    while (1);
+  }
+
+  BLEDevice::init(DEVICE_NAME);
+  pServer = BLEDevice::createServer();
+  pServer->setCallbacks(new MyServerCallbacks());
+
+  BLEService* pService = pServer->createService(SERVICE_UUID);
+  pCharacteristic = pService->createCharacteristic(
+    CHARACTERISTIC_UUID,
+    BLECharacteristic::PROPERTY_READ | 
+    BLECharacteristic::PROPERTY_NOTIFY
+  );
+  pCharacteristic->addDescriptor(new BLE2902());
+  pService->start();
+  
+  BLEAdvertising* pAdvertising = BLEDevice::getAdvertising();
+  pAdvertising->addServiceUUID(SERVICE_UUID);
+  pAdvertising->setScanResponse(true);
+  BLEDevice::startAdvertising();
+  
+  Serial.println("BLE server started");
+}
+
+void loop() {
+  float temperature = bme.readTemperature();
+  tempBuffer[bufferIndex] = temperature;
+  bufferIndex = (bufferIndex + 1) % FILTER_SIZE;
+  if (bufferIndex == 0) bufferFilled = true;
+
+  float avgTemperature = getAverageTemperature();
+  Serial.print("Average Temperature: ");
+  Serial.print(avgTemperature);
+  Serial.println(" °C");
+
+  if (deviceConnected) {
+    String tempStr = String(avgTemperature, 2);
+    pCharacteristic->setValue(tempStr.c_str());
+    pCharacteristic->notify();
+    Serial.println("Sent temperature data: " + tempStr);
+  }
+  delay(2000);
+}
